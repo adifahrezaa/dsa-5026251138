@@ -1,115 +1,86 @@
 package lw02.unguided;
+
+import java.util.LinkedList;
 import java.util.Scanner;
 import java.util.Stack;
-import java.util.LinkedList;
 
 public class Main {
-    public static void main(String[] args) {
 
-        LinkedList<String[]> orders = new LinkedList<>();
+    // cari entri stok berdasarkan nama, null kalau tidak ada
+    static String[] find(LinkedList<String[]> stock, String name) {
+        for (String[] item : stock) {
+            if (item[0].equals(name)) return item;
+        }
+        return null;
+    }
+
+    static boolean available(String[] item) {
+        return item != null && Integer.parseInt(item[1]) > 0;
+    }
+
+    static void reduce(String[] item) {
+        item[1] = String.valueOf(Integer.parseInt(item[1]) - 1);
+    }
+
+    public static void main(String[] args) {
         LinkedList<String[]> food = new LinkedList<>();
         LinkedList<String[]> drink = new LinkedList<>();
+        LinkedList<String[]> queue = new LinkedList<>();
         LinkedList<String[]> successOrders = new LinkedList<>();
+        Stack<String[]> failedOrders = new Stack<>();
 
-        Scanner sc2 = new Scanner(Main.class.getResourceAsStream("orders.txt"));
+        // isi stok awal (langsung, tanpa loop)
+        food.add(new String[]{"Bakso", "5"});
+        food.add(new String[]{"Sate", "1"});
+        food.add(new String[]{"Soto", "2"});
+        drink.add(new String[]{"EsTeh", "4"});
+        drink.add(new String[]{"EsJeruk", "2"});
 
-        while (sc2.hasNext()) {
-            String name = sc2.next();
-            String sideDish = sc2.next();
-            String drinkOrder = sc2.next();
-            int table = sc2.nextInt();
-            orders.add(new String[]{name, sideDish, drinkOrder, String.valueOf(table)});
+        // baca order ke queue
+        Scanner sc = new Scanner(Main.class.getResourceAsStream("orders.txt"));
+        while (sc.hasNext()) {
+            String name = sc.next();
+            String sideDish = sc.next();
+            String drinkOrder = sc.next();
+            int table = sc.nextInt();
+            queue.add(new String[]{name, sideDish, drinkOrder, String.valueOf(table)});
         }
-    sc2.close();
+        sc.close();
 
-    
-    for (String[] foodStock : food) {
-        String name = "Bakso";
-        int amount = 5;
-        food.add(new String[]{name, String.valueOf(amount)});
+        // proses order satu per satu (FIFO)
+        while (!queue.isEmpty()) {
+            String[] order = queue.poll();
+            String[] f = find(food, order[1]);
+            String[] d = find(drink, order[2]);
 
-        String name2 = "Sate";
-        int amount2 = 1;
-        food.add(new String[]{name2, String.valueOf(amount2)});
-
-        String  name3 = "Soto";
-        int amount3 = 2;
-        food.add(new String[]{name3, String.valueOf(amount3)});
-    }
-
-    for (String[] drinkStock : drink) {
-        String name = "EsTeh";
-        int amount = 4;
-        drink.add(new String[]{name, String.valueOf(amount)});
-
-        String name2 = "EsJeruk";
-        int amount2 = 2;
-        drink.add(new String[]{name2, String.valueOf(amount2)});
-    }
-
-    LinkedList<String[]> queue = new LinkedList<>();
-    for (String[] order : orders) {
-        queue.add(order);
-    }
-
-    while (!queue.isEmpty()) {
-        String[] currentOrder = queue.poll();
-        String name = currentOrder[0];
-        String sideDish = currentOrder[1];
-        String drinkOrder = currentOrder[2];
-        String table = currentOrder[3];
-
-        Stack <String[]> failedOrders = new Stack<>();
-        for (String[] foodStock : food) {
-            if (foodStock[0].equals("Bakso")) {
-                if (Integer.parseInt(foodStock[1]) > 0) {
-                    foodStock[1] = String.valueOf(Integer.parseInt(foodStock[1]) - 1);
-                }
-            } else if (foodStock[0].equals("Sate")) {
-                if (Integer.parseInt(foodStock[1]) > 0) {
-                    foodStock[1] = String.valueOf(Integer.parseInt(foodStock[1]) - 1);
-                }
-            } else if (foodStock[0].equals("Soto")) {
-                if (Integer.parseInt(foodStock[1]) > 0) {
-                    foodStock[1] = String.valueOf(Integer.parseInt(foodStock[1]) - 1);
-                } else if (foodStock.equals("0")) {
-                    failedOrders.push(currentOrder);
-                } 
-                    
-            }
-} 
-        for (String[] drinkStock : drink) {
-            if (drinkStock[0].equals("EsTeh")) {
-                if (Integer.parseInt(drinkStock[1]) > 0) {
-                    drinkStock[1] = String.valueOf(Integer.parseInt(drinkStock[1]) - 1);
-                }
-            } else if (drinkStock[0].equals("EsJeruk")) {
-                if (Integer.parseInt(drinkStock[1]) > 0) {
-                    drinkStock[1] = String.valueOf(Integer.parseInt(drinkStock[1]) - 1);
-                }
-                else if (drinkStock.equals("0")) {
-                    failedOrders.push(currentOrder);
-                }
+            if (available(f) && available(d)) {   // cek keduanya dulu
+                reduce(f);
+                reduce(d);
+                successOrders.add(order);
+            } else {
+                failedOrders.push(order);
             }
         }
 
-        successOrders.add(new String[]{name, sideDish, drinkOrder, table});
-    }
+        System.out.println("=== Successful Orders ===");
+        for (String[] o : successOrders) {
+            System.out.println(o[0] + " " + o[1] + " " + o[2] + " " + o[3]);
+        }
 
-    System.out.println("=== Successful Orders ===");
-    for (String[] order : successOrders) {
-        System.out.println (order[0] + order[1] + order[2] + order[3]);
-    }
+        System.out.println("=== Remaining Food Stock ===");
+        for (String[] s : food) {
+            System.out.println(s[0] + " " + s[1]);
+        }
 
-    System.out.println("=== Remaining Food Stock ===");
-    for (String[] foodStock : food) {
-        System.out.println(foodStock[0] + foodStock[1]);
-    }
-    System.out.println("=== Remaining Drink Stock ===");
-    for (String[] drinkStock : drink) {
-        System.out.println(drinkStock[0] + drinkStock[1]);
-    }
-    System.out.println("=== Failed Orders ===");
-    
+        System.out.println("=== Remaining Drink Stock ===");
+        for (String[] s : drink) {
+            System.out.println(s[0] + " " + s[1]);
+        }
+
+        System.out.println("=== Failed Orders ===");
+        while (!failedOrders.isEmpty()) {
+            String[] o = failedOrders.pop();
+            System.out.println(o[0] + " " + o[1] + " " + o[2] + " " + o[3]);
+        }
     }
 }
